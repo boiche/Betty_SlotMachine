@@ -1,42 +1,42 @@
-﻿namespace Betty_SlotMachine.Commands
-{
-    public static class CommandContext
-    {
-        private static Command? _recentCommand;
+﻿using Betty_SlotMachine.Games;
 
+namespace Betty_SlotMachine.Commands
+{
+    /// <summary>
+    /// Reads commands from the player and runs them against the <see cref="GameEnvironment"/>
+    /// </summary>
+    /// <param name="environment">Environment the commands are executed on</param>
+    /// <param name="input">Where commands are read from</param>
+    /// <param name="output">Where parsing errors are written</param>
+    public class CommandContext(GameEnvironment environment, TextReader input, TextWriter output)
+    {
         /// <summary>
         /// Contains the last typed command
         /// </summary>
-        public static Command? RecentCommand { get => _recentCommand; }
-
-        static CommandContext()
-        {
-            _recentCommand = null;
-        }
+        public Command? RecentCommand { get; private set; }
 
         /// <summary>
         /// Prompts user to input new command
         /// </summary>
-        public static void ReadCommand()
+        public void ReadCommand()
         {
-            string input = Console.ReadLine() ?? string.Empty;
+            string line = input.ReadLine() ?? string.Empty;
 
-            if (!CommandParser.TryParse(input, out _recentCommand, out string? errorMessage))
+            if (!CommandParser.TryParse(line, out var command, out string? errorMessage))
             {
                 if (!string.IsNullOrEmpty(errorMessage))
-                    Console.WriteLine(errorMessage);
+                    output.WriteLine(errorMessage);
             }
+
+            RecentCommand = command;
         }
 
         /// <summary>
         /// Executes recent <see cref="Command"/>
         /// </summary>
-        public static void ExecuteCommand()
+        public void ExecuteCommand()
         {
-            if (_recentCommand == null)
-                return;
-
-            _recentCommand.Execute();
+            RecentCommand?.Execute(environment);
         }
     }
 }

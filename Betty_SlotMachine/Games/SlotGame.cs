@@ -11,16 +11,18 @@ namespace Betty_SlotMachine.Games
         protected SlotGameConfiguration _configuration;
         protected List<(long Upper, GameOutcome Outcome)> _outcomeBounds;
 
+        public SlotGameConfiguration Configuration => _configuration;
+
         /// <summary>
         /// Executes single run of the game
         /// </summary>
         /// <param name="bet">Amount to bet</param>
-        public abstract void Bet(decimal bet);
+        public abstract decimal Bet(decimal bet);
 
         /// <summary>
         /// Applies all policies required for the game
         /// </summary>
-        public abstract void Configure();
+        public abstract bool Configure();
 
         /// <summary>
         /// Terminates the game

@@ -1,4 +1,7 @@
 {
+  "minBet": 1,
+  "maxBet": 10,
+  "maxDeposit": 100000,
   "outcomes": [
     {
       "name": "loss",

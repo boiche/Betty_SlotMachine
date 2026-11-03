@@ -1,31 +1,27 @@
-﻿using Betty_SlotMachine.Commands;
+﻿using Betty_SlotMachine.Games;
+using Betty_SlotMachine.Models;
 
 namespace Betty_SlotMachine.Validation
 {
     /// <summary>
     /// Checks amounts of any bet whether player has sufficient funds to bet
     /// </summary>
-    public class BettingValidator : IValidator
+    public class BettingValidator(SlotGame game, decimal bet, Wallet wallet, TextWriter output) : IValidator
     {
         private const string NO_FUNDS = "Insufficient funds. Please deposit. Current balance is {0:F2}$";
+        private const string INVALID_BET = "Amount should be between {0:F2}$ and {1:F2}$";
 
         public bool Validate()
         {
-            if (CommandContext.RecentCommand is not BetCommand command)
+            if (bet < game.Configuration.MinBet || bet > game.Configuration.MaxBet)
             {
-                Console.WriteLine("Invalid command.");
+                output.WriteLine(string.Format(INVALID_BET, game.Configuration.MinBet, game.Configuration.MaxBet));
                 return false;
             }
 
-            if (command.BetAmount < 1 || command.BetAmount > 10)
+            if (bet > wallet.Balance)
             {
-                Console.WriteLine("Amount should be between 1$ and 10$");
-                return false;
-            }
-
-            if (command.BetAmount > Player.Balance)
-            {
-                Console.WriteLine(string.Format(NO_FUNDS, Player.Balance));
+                output.WriteLine(string.Format(NO_FUNDS, wallet.Balance));
                 return false;
             }
 

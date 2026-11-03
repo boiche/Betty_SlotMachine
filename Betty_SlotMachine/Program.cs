@@ -1,13 +1,14 @@
 ﻿using Betty_SlotMachine.Commands;
 using Betty_SlotMachine.Games;
+using Betty_SlotMachine.Models;
 
-GameEnvironment.LoadGame(new BettyGame());
+var environment = new GameEnvironment(new BettyGame(Console.Out), new Player(), Console.Out);
+var commands = new CommandContext(environment, Console.In, Console.Out);
 
-while (true)
+environment.Start();
+
+while (!environment.Terminated)
 {
-    CommandContext.ReadCommand();
-
-    CommandContext.ExecuteCommand();
-    if (GameEnvironment.Terminated)
-        break;
+    commands.ReadCommand();
+    commands.ExecuteCommand();
 }

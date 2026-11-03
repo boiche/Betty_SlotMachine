@@ -1,10 +1,12 @@
 using Betty_SlotMachine.Games;
+using Betty_SlotMachine.Models;
 
 namespace Betty_SlotMachine.Tests;
 
 /// <summary>
-/// Statistical tests of the real <see cref="BettyGame"/>. The RNG is not injectable, so they run many rounds
+/// Statistical tests of the real <see cref="BettyGame"/> with real randomness. They run many rounds
 /// and use tolerances far wider than the sampling error (5+ standard deviations) to stay non-flaky.
+/// Exact per-round behaviour is covered with a fixed random in <see cref="BettyGameRoundTests"/>.
 /// </summary>
 public class BettyGameProbabilityTests
 {
@@ -18,36 +20,26 @@ public class BettyGameProbabilityTests
 
     private static Result Simulate()
     {
-        var oldOut = Console.Out;
-        Console.SetOut(TextWriter.Null);
-        try
+        var game = new BettyGame(TextWriter.Null);
+        game.Configure();
+        var wallet = new Wallet();
+        wallet.Add(1_000_000_000m);
+
+        int loss = 0, small = 0, big = 0;
+        decimal minSmall = decimal.MaxValue, maxSmall = 0, minBig = decimal.MaxValue, maxBig = 0, paid = 0;
+
+        for (int i = 0; i < Rounds; i++)
         {
-            var game = new BettyGame();
-            game.Configure();
-            Player.Balance = 1_000_000_000m;
+            var win = game.Bet(Bet);
+            var multiplier = win / Bet;
+            paid += win;
 
-            int loss = 0, small = 0, big = 0;
-            decimal minSmall = decimal.MaxValue, maxSmall = 0, minBig = decimal.MaxValue, maxBig = 0, paid = 0;
-
-            for (int i = 0; i < Rounds; i++)
-            {
-                var before = Player.Balance;
-                game.Bet(Bet);
-                var win = Player.Balance - before + Bet;
-                var multiplier = win / Bet;
-                paid += win;
-
-                if (win == 0) loss++;
-                else if (multiplier < 2) { small++; minSmall = Math.Min(minSmall, multiplier); maxSmall = Math.Max(maxSmall, multiplier); }
-                else { big++; minBig = Math.Min(minBig, multiplier); maxBig = Math.Max(maxBig, multiplier); }
-            }
-
-            return new Result(loss, small, big, minSmall, maxSmall, minBig, maxBig, paid);
+            if (win == 0) loss++;
+            else if (multiplier < 2) { small++; minSmall = Math.Min(minSmall, multiplier); maxSmall = Math.Max(maxSmall, multiplier); }
+            else { big++; minBig = Math.Min(minBig, multiplier); maxBig = Math.Max(maxBig, multiplier); }
         }
-        finally
-        {
-            Console.SetOut(oldOut);
-        }
+
+        return new Result(loss, small, big, minSmall, maxSmall, minBig, maxBig, paid);
     }
 
     private static double Percent(int count) => count * 100.0 / Rounds;
@@ -79,7 +71,7 @@ public class BettyGameProbabilityTests
 
         Assert.InRange(r.MinSmall, 0.1m, 2m);
         Assert.InRange(r.MaxSmall, 0.1m, 2m);
-        Assert.True(r.MaxSmall < 2m);
+        Assert.True(r.MaxSmall <= 2m);
     }
 
     [Fact]
@@ -99,34 +91,5 @@ public class BettyGameProbabilityTests
         var rtp = (double)(Simulation.Value.Paid / (Rounds * Bet)) * 100;
 
         Assert.InRange(rtp, 100.0, 104.0);
-    }
-
-    [Fact]
-    public void A_losing_bet_costs_exactly_the_stake_and_a_win_never_loses_more_than_it()
-    {
-        var oldOut = Console.Out;
-        var output = new StringWriter();
-        Console.SetOut(output);
-        try
-        {
-            var game = new BettyGame();
-            game.Configure();
-            Player.Balance = 1_000_000;
-
-            for (int i = 0; i < 1000; i++)
-            {
-                output.GetStringBuilder().Clear();
-                var before = Player.Balance;
-                game.Bet(Bet);
-                var delta = Player.Balance - before;
-
-                Assert.InRange(delta, -Bet, 9 * Bet);                 // never worse than the stake, never above x10
-                if (output.ToString().Contains("No luck"))
-                    Assert.Equal(-Bet, delta);
-                else
-                    Assert.Contains("You won", output.ToString());
-            }
-        }
-        finally { Console.SetOut(oldOut); }
     }
 }

@@ -4,9 +4,9 @@ namespace Betty_SlotMachine.Commands
 {
     public class ExitCommand() : Command(CommandType.Exit)
     {
-        public override void Execute()
+        public override void Execute(GameEnvironment environment)
         {
-            GameEnvironment.Exit();
+            environment.Exit();
         }
     }
 }

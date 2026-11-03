@@ -6,9 +6,9 @@ namespace Betty_SlotMachine.Commands
     {
         public decimal BetAmount { get; } = betAmount;
 
-        public override void Execute()
+        public override void Execute(GameEnvironment environment)
         {
-            GameEnvironment.Bet(BetAmount);
+            environment.Bet(BetAmount);
         }
     }
 }
